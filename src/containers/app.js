@@ -36,22 +36,46 @@ class App extends Component{
       }.bind(this));
     }
 
-    receiveCallBack (movie){
+    onClickListItem ( movie ){
       this.setState({currentMovie: movie}, function(){
         this.applyVideoToCurrrentMovie();
+        this.setRecommendation();
       })
+    }
+
+    onClickSearch ( searchText ){
+      if(searchText){
+        Axios.get(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=en-US&query=${searchText}&page=1&include_adult=false`).then(function ( response ){
+
+          if(response.data
+             && response.data.results[0]
+             && response.data.results[0].id != this.state.currentMovie.id ){
+
+                  this.setState({currentMovie: response.data.results[0]}, () => {
+                    this.applyVideoToCurrrentMovie();
+                    this.setRecommendation();
+                  })
+          }
+        }.bind(this));
+      }
+    }
+
+    setRecommendation(){
+      Axios.get(`https://api.themoviedb.org/3/movie/${this.state.currentMovie.id}/recommendations?api_key=${API_KEY}&language=en-US&page=1`).then(function (response){
+          this.setState( {moviesList:response.data.results.slice(0,5)});
+      }.bind(this));
     }
 
     render (){
         const renderVideoList = () => {
             if( this.state.moviesList.length >= 5 ){
-                return <VideoList moviesList={this.state.moviesList} callback={this.receiveCallBack.bind(this)}/>
+                return <VideoList moviesList={this.state.moviesList} callback={this.onClickListItem.bind(this)}/>
             }
         }
         return (
             <div>
                 <div className="search_bar">
-                  <SearchBar />
+                  <SearchBar callback={this.onClickSearch.bind(this)}/>
                 </div>
                 <div className="row">
                   <div className="col-md-8">
